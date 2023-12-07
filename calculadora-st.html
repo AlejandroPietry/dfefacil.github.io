@@ -21,7 +21,7 @@
             <form id="calculatorForm" class="form-group">
                 <div class="row">
                     <div class="col mb-3">
-                        <label for="valorProduto" class="form-label">Valor do</label>
+                        <label for="valorProduto" class="form-label">Valor do Produto</label>
                         <input type="number" class="form-control" id="valorProduto"
                             placeholder="Informe o valor do produto">
                     </div>
@@ -121,24 +121,50 @@
         if (InputsValidos(valorProduto)) {
             var calculoBaseST = 0;
             var valorST = 0;
-            var calculoBaseInter = valorProduto + valorFrete + valorSeguro + outrasDespesas - descontos;
             var valorICMS = 0;
 
+            // a soma de tudo menos os descontos
+            var valorTotalDaOperacao = valorProduto + valorFrete + valorSeguro + outrasDespesas - descontos;
+            console.log("valor total da operacao, soma de td - descontos", valorTotalDaOperacao);
+
             if(valorIPI == 0){
-                valorICMS = calculoBaseInter * (valorAlicotaInterestadual / 100);
+                valorICMS = valorTotalDaOperacao * (valorAlicotaInterestadual / 100);
+                // base de calculo para o valor do ICMS ST
+                calculoBaseST = valorTotalDaOperacao * (1 + mva / 100);
+
+                valorST = calculoBaseST * valorAlicotaDestino / 100 - valorICMS;
+
+                var valorCobratePobreza = calculoBaseST * (valorAlicotaCalculoPobreza / 100);
+                document.getElementById('total').textContent = valorST.toFixed(2);
+
+                document.getElementById('totalBaseCalculoPobreza').textContent = valorCobratePobreza.toFixed(2);
             }
             else{
-                valorICMS = calcularICMSSTcomIPI(calculoBaseInter, valorAlicotaInterestadual, valorIPI);
+                var valorDaOperacaoParaICMS = valorTotalDaOperacao;
+                valorTotalDaOperacao = valorTotalDaOperacao + valorIPI + descontos;
+
+                console.log("valor total da operacao com IPI", valorTotalDaOperacao)
+                console.log("valor total da operacao para ICMS", valorDaOperacaoParaICMS)
+                var icmsProprio = valorDaOperacaoParaICMS * (valorAlicotaInterestadual / 100);
+                console.log("Valor icms proprio", icmsProprio);
+
+                // O desconto incondicional não é considerado para essa base.
+                // Por isso eu estou somando o valor do frete novamente, para descosniderar o valor do 
+                // frete nessa operacao 
+                calculoBaseST = (valorTotalDaOperacao * (mva / 100)) + valorTotalDaOperacao ;
+                console.log("calculo base st", calculoBaseST);
+
+                var valorEmReaisDaAlicotaDestino = calculoBaseST * (valorAlicotaDestino / 100);
+                console.log("aplicada a alíquota do destino sobre a base de ST", valorEmReaisDaAlicotaDestino)
+                valorST = valorEmReaisDaAlicotaDestino - icmsProprio
+                console.log("valor da st", valorST)
+                var valorCobratePobreza = calculoBaseST * (valorAlicotaCalculoPobreza / 100);
+
+                document.getElementById('total').textContent = valorST.toFixed(2);
+
+                document.getElementById('totalBaseCalculoPobreza').textContent = valorCobratePobreza.toFixed(2);
             }
             
-            // base de calculo para o valor do ICMS ST
-            calculoBaseST = (valorProduto + valorFrete + valorSeguro + outrasDespesas - descontos) * (1 + mva / 100);
-            valorST = calculoBaseST * valorAlicotaDestino / 100 - valorICMS;
-
-            var valorCobratePobreza = calculoBaseST * (valorAlicotaCalculoPobreza / 100);
-            document.getElementById('total').textContent = valorST.toFixed(2);
-
-            document.getElementById('totalBaseCalculoPobreza').textContent = valorCobratePobreza.toFixed(2);
 
         }
     }
